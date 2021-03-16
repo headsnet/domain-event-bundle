@@ -15,7 +15,6 @@ namespace Headsnet\DomainEventsBundle\Doctrine;
 use DateInterval;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ObjectRepository;
 use Headsnet\DomainEventsBundle\Doctrine\Event\PreAppendEvent;
 use Headsnet\DomainEventsBundle\Domain\Model\DomainEvent;
 use Headsnet\DomainEventsBundle\Domain\Model\EventId;
@@ -33,11 +32,6 @@ final class DoctrineEventStore implements EventStore
     private $em;
 
     /**
-     * @var ObjectRepository
-     */
-    private $repository;
-
-    /**
      * @var SerializerInterface
      */
     private $serializer;
@@ -53,7 +47,6 @@ final class DoctrineEventStore implements EventStore
         EventDispatcherInterface $eventDispatcher
     ) {
         $this->em = $entityManager;
-        $this->repository = $entityManager->getRepository(StoredEvent::class);
         $this->serializer = $serializer;
         $this->eventDispatcher = $eventDispatcher;
     }
@@ -88,7 +81,8 @@ final class DoctrineEventStore implements EventStore
 
     public function replace(DomainEvent $domainEvent): void
     {
-        $replaceableEvents = $this->repository->findBy([
+        $repository = $this->em->getRepository(StoredEvent::class);
+        $replaceableEvents = $repository->findBy([
             'aggregateRoot' => $domainEvent->getAggregateRootId(),
             'typeName' => get_class($domainEvent),
             'publishedOn' => null,
